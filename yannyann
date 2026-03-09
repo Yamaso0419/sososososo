@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>追いかけっこゲーム（障害物）</title>
+<style>
+body{
+    background:#222;
+    color:white;
+    text-align:center;
+    font-family:sans-serif;
+}
+canvas{
+    background:#444;
+    margin-top:20px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>追いかけっこゲーム</h1>
+<p>矢印キーで逃げろ！壁に注意</p>
+<p id="score">時間:0</p>
+
+<canvas id="game" width="600" height="400"></canvas>
+
+<script>
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let player = {x:50,y:200,speed:4};
+let enemy = {x:550,y:200,speed:2};
+
+let keys = {};
+let score = 0;
+let gameOver = false;
+
+// 障害物
+let walls = [
+{x:150,y:50,w:20,h:300},
+{x:300,y:0,w:20,h:250},
+{x:450,y:150,w:20,h:250},
+{x:200,y:150,w:120,h:20},
+{x:350,y:80,w:120,h:20}
+];
+
+document.addEventListener("keydown",e=>keys[e.key]=true);
+document.addEventListener("keyup",e=>keys[e.key]=false);
+
+function collide(x,y){
+
+for(let wall of walls){
+
+if(x > wall.x-10 &&
+   x < wall.x+wall.w+10 &&
+   y > wall.y-10 &&
+   y < wall.y+wall.h+10){
+
+return true;
+
+}
+
+}
+
+return false;
+
+}
+
+function drawHuman(x,y,color){
+
+ctx.fillStyle=color;
+
+// 頭
+ctx.beginPath();
+ctx.arc(x,y-15,8,0,Math.PI*2);
+ctx.fill();
+
+// 体
+ctx.fillRect(x-3,y-15,6,20);
+
+// 腕
+ctx.beginPath();
+ctx.moveTo(x,y-5);
+ctx.lineTo(x-8,y+5);
+ctx.moveTo(x,y-5);
+ctx.lineTo(x+8,y+5);
+ctx.strokeStyle=color;
+ctx.lineWidth=3;
+ctx.stroke();
+
+// 足
+ctx.beginPath();
+ctx.moveTo(x,y+5);
+ctx.lineTo(x-6,y+15);
+ctx.moveTo(x,y+5);
+ctx.lineTo(x+6,y+15);
+ctx.stroke();
+
+}
+
+function update(){
+
+if(gameOver) return;
+
+let newX = player.x;
+let newY = player.y;
+
+if(keys["ArrowUp"]) newY -= player.speed;
+if(keys["ArrowDown"]) newY += player.speed;
+if(keys["ArrowLeft"]) newX -= player.speed;
+if(keys["ArrowRight"]) newX += player.speed;
+
+// 壁チェック
+if(!collide(newX,newY)){
+player.x = newX;
+player.y = newY;
+}
+
+// 追跡
+let dx = player.x - enemy.x;
+let dy = player.y - enemy.y;
+let dist = Math.sqrt(dx*dx + dy*dy);
+
+let enemyX = enemy.x + dx/dist * enemy.speed;
+let enemyY = enemy.y + dy/dist * enemy.speed;
+
+if(!collide(enemyX,enemyY)){
+enemy.x = enemyX;
+enemy.y = enemyY;
+}
+
+// 捕まる
+if(dist < 15){
+gameOver = true;
+alert("捕まった！生存時間:"+score);
+}
+
+score++;
+document.getElementById("score").innerText="時間:"+score;
+
+}
+
+function draw(){
+
+ctx.clearRect(0,0,canvas.width,canvas.height);
+
+// 壁
+ctx.fillStyle="brown";
+for(let wall of walls){
+ctx.fillRect(wall.x,wall.y,wall.w,wall.h);
+}
+
+// 人
+drawHuman(player.x,player.y,"cyan");
+drawHuman(enemy.x,enemy.y,"red");
+
+}
+
+function loop(){
+update();
+draw();
+requestAnimationFrame(loop);
+}
+
+loop();
+
+</script>
+
+</body>
+</html>
